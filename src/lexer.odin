@@ -1,4 +1,5 @@
 #+feature dynamic-literals
+
 package pinky
 
 import "core:strings"
@@ -18,8 +19,6 @@ Tokenizer :: struct {
     line: int,
     tokens: [dynamic]Token,
 }
-
-
 
 tokenize :: proc(source: string) -> []Token {
     t := Tokenizer {
@@ -79,12 +78,18 @@ tokenize :: proc(source: string) -> []Token {
         case ch == '.': add_token(&t, .DOT)
         case ch == '+': add_token(&t, .PLUS)
         case ch == '*': add_token(&t, .STAR)
-        case ch == '/': add_token(&t, .SLASH)
         case ch == '^': add_token(&t, .CARET)
         case ch == '%': add_token(&t, .MOD)
         case ch == ';': add_token(&t, .SEMICOLON)
         case ch == '?': add_token(&t, .QUESTION)
 
+        case ch == '/':
+            if match(&t, '*') {
+                for peek(&t) != '*' && look_ahead(&t) != '/' && t.current < len(t.source) do advance(&t)
+                if t.current >= len(t.source) do fmt.panicf("line: %v, missing */ for multiline comment", t.line)
+                advance(&t, 2)
+            }
+            else do add_token(&t, .SLASH)
         case ch == '-':
             if match(&t, '-') {
                 // line comment
@@ -92,7 +97,8 @@ tokenize :: proc(source: string) -> []Token {
             }
             else do add_token(&t, .MINUS)
         case ch == '=':
-            if match(&t, '=') do add_token(&t, .EQ)
+            if match(&t, '=') do add_token(&t, .EQEQ)
+            else do add_token(&t, .EQ)
         case ch == '~':
             if match(&t, '=') do add_token(&t, .NE)
             else do add_token(&t, .NOT)
@@ -130,9 +136,9 @@ is_alphanum :: proc(ch: byte) -> bool {
     return is_alpha(ch) || is_digit(ch)
 }
 
-advance :: proc(using t: ^Tokenizer) -> byte {
+advance :: proc(using t: ^Tokenizer, n := 1) -> byte {
     ch := source[current]
-    current += 1
+    current += n
     return ch
 }
 
@@ -180,11 +186,12 @@ Token_type :: enum {
     NOT,                    //  ~
     GT,                     //  >
     LT,                     //  <
+    EQ,                     //  =
     // Two-char tokens
     GE,                     //  >=
     LE,                     //  <=
     NE,                     //  ~=
-    EQ,                     //  ==
+    EQEQ,                   //  ==
     ASSIGN,                 //  :=
     GTGT,                   //  >>
     LTLT,                   //  <<

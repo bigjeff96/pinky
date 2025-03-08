@@ -1,17 +1,2 @@
--- eval stuff + /
-x := 23452.0 - -3.1415 * 4
-abba := 2
-_hihi2 := "Hello"
-
-if x >= 10 then
-    ret "hihi"
-else
-    ret "bob"
-end
-
-if len("hihi") = 5 then
-    ret "bob"
-end
-
-
-
+-- parsing a simple expression
+2.6 + 2 * 42 + (47 * -2)

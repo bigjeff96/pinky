@@ -2,6 +2,7 @@ package pinky
 
 import "core:fmt"
 import "core:os"
+import vmem "core:mem/virtual"
 
 print :: fmt.println
 
@@ -22,4 +23,11 @@ main :: proc() {
     tokens := tokenize(source)
 
     for token in tokens do print(token)
+    arena: vmem.Arena
+    err := vmem.arena_init_growing(&arena)
+    ensure(err == nil)
+    arena_alloc := vmem.arena_allocator(&arena)
+
+    parser := Parser{tokens = tokens[:], allocator = arena_alloc}
+    parse(&parser)
 }

@@ -1,9 +1,9 @@
-debug_flags := "-use-separate-modules -debug -dynamic-map-calls"
+debug_flags := "-debug"
 exe :=  "build/pinky.exe"
 
 build:
     @mkdir -p build
-    odin build src {{ debug_flags }} -out:{{ exe }}
+    odin build src {{ debug_flags }} -out:{{ exe }} -show-timings
 
 run: build
     ./{{exe}} scripts/myscript.pinky
