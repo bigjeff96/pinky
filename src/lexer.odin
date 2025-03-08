@@ -44,7 +44,9 @@ tokenize :: proc(source: string) -> []Token {
 
         handle_string :: proc(using t: ^Tokenizer, start_quote: byte) {
             for peek(t) != start_quote && current < len(source) do advance(t)
-            if current >= len(source) do fmt.panicf("line: %v, missing closing quote for string", line)
+            if current >= len(source) {
+                fmt.panicf("line: %v, missing closing quote for string", line)
+            }
             advance(t)
             add_token(t, .STRING)
         }
