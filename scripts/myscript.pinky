@@ -1,2 +1,2 @@
 -- parsing a simple expression
-2.6 + 2 * 42 + (47 * -2)
+2 / 42 * 2 + (47 * -21)
