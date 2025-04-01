@@ -6,6 +6,8 @@ import "core:strings"
 import "core:fmt"
 import text "core:text/match"
 
+_ :: strings
+
 Token :: struct {
     type : Token_type,
     lexeme: string,

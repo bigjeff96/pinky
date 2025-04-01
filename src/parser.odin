@@ -2,6 +2,7 @@ package pinky
 
 import "core:fmt"
 import "core:mem"
+import "core:io"
 
 todo :: proc(loc:= #caller_location) {
     assert(false, "Not implemented", loc)
@@ -197,6 +198,78 @@ Grouping :: struct {
     value: ^Expr,
 }
 
+Expr_formatter :: proc(fi: ^fmt.Info, arg: any, verb: rune) -> bool {
+    expr := cast(^Expr)arg.data
+    assert(verb == 'v')
+
+    recursive_formatter :: proc(fi: ^fmt.Info, expr: ^Expr, indent: int) {
+        write_indentation :: proc(fi: ^fmt.Info, indent: int) {
+            indent := indent
+            for indent > 0 {
+                io.write_string(fi.writer, "    ", &fi.n)
+                indent -= 1
+            }
+        }
+        // TODO: this is not great, should do something better
+        write_indentation(fi, indent)
+        switch expr.type {
+        case .integer:
+            integer := cast(^Integer)expr
+            io.write_string(fi.writer, "Integer{", &fi.n)
+            io.write_string(fi.writer, integer.value, &fi.n)
+            io.write_string(fi.writer, "}", &fi.n)
+        case .float:
+            float := cast(^Float)expr
+            io.write_string(fi.writer, "Float{", &fi.n)
+            io.write_string(fi.writer, float.value, &fi.n)
+            io.write_string(fi.writer, "}", &fi.n)
+        case .un_op:
+            un_op := cast(^Un_op)expr
+            io.write_string(fi.writer, "Un_op{type: ", &fi.n)
+            io.write_string(fi.writer, un_op.op.lexeme, &fi.n)
+            io.write_string(fi.writer, "\n", &fi.n)
+            write_indentation(fi, indent + 1)
+            io.write_string(fi.writer, "operand: \n", &fi.n)
+            recursive_formatter(fi, un_op.operand, indent + 1)
+            io.write_string(fi.writer, "\n", &fi.n)
+            write_indentation(fi, indent)
+            io.write_string(fi.writer, "}", &fi.n)
+        case .bin_op:
+            bin_op := cast(^Bin_op)expr
+            io.write_string(fi.writer, "Bin_op{type: ", &fi.n)
+            io.write_string(fi.writer, bin_op.op.lexeme, &fi.n)
+            io.write_string(fi.writer, "\n", &fi.n)
+            write_indentation(fi, indent + 1)
+            io.write_string(fi.writer, "left: \n", &fi.n)
+            recursive_formatter(fi, bin_op.left, indent + 1)
+            io.write_string(fi.writer, "\n", &fi.n)
+            write_indentation(fi, indent + 1)
+            io.write_string(fi.writer, "right: \n", &fi.n)
+            recursive_formatter(fi, bin_op.right, indent + 1)
+            io.write_string(fi.writer, "\n", &fi.n)
+            write_indentation(fi, indent)
+            io.write_string(fi.writer, "}", &fi.n)
+        case .grouping:
+            grouping := cast(^Grouping)expr
+            io.write_string(fi.writer, "Grouping{ \n", &fi.n)
+            recursive_formatter(fi, grouping.value, indent + 1)
+            io.write_string(fi.writer, "\n", &fi.n)
+            write_indentation(fi, indent)
+            io.write_string(fi.writer, "}", &fi.n)
+        }
+    }
+
+    recursive_formatter(fi, expr, 0)
+
+    return true
+}
+
+@(init)
+set_expr_formatter :: proc() {
+    fmt.set_user_formatters(new(map[typeid]fmt.User_Formatter))
+    err := fmt.register_user_formatter(type_info_of(Expr).id, Expr_formatter)
+    assert(err == .None)
+}
 //---Statements---
 
 Stmt_type :: enum {
